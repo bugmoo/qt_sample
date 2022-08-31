@@ -2,5 +2,5 @@ TEMPLATE = subdirs
 
 SUBDIRS += \
     application/file/logs \
-    hardware/serial/serial_app \
-    socket_app
+    hardware/network/socket_app \
+    hardware/serial/serial_app

@@ -1,4 +1,4 @@
-#include <QCoreApplication>
+﻿#include <QCoreApplication>
 #include <logmessage.h>
 #include <QTextStream>
 #include <iostream>
@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
     QTextStream qout(stdout);
     QCoreApplication a(argc, argv);
 
-    qout << QStringLiteral("输入输出log路径:")<<Qt::endl;// endl 结束，或者控制台不显示
+    qout << QStringLiteral("输入输出log路径:").toUtf8()<<Qt::endl;// endl 结束，或者控制台不显示
     QString  str;
     qin >> str ;
     // qout << str <<Qt::endl;

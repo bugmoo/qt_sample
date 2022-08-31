@@ -6,25 +6,51 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>143</width>
-    <height>98</height>
+    <width>351</width>
+    <height>97</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPushButton" name="btnSerialWin">
+   <widget class="QPushButton" name="btnTcpClientWin">
     <property name="geometry">
      <rect>
-      <x>30</x>
+      <x>20</x>
       <y>20</y>
       <width>75</width>
       <height>24</height>
      </rect>
     </property>
     <property name="text">
-     <string>串口</string>
+     <string>tcp 客户端</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnTcpServerWin">
+    <property name="geometry">
+     <rect>
+      <x>110</x>
+      <y>20</y>
+      <width>75</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>tcp 服务端</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnUdpWin">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>20</y>
+      <width>75</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>udp</string>
     </property>
    </widget>
   </widget>
@@ -33,7 +59,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>143</width>
+     <width>351</width>
      <height>22</height>
     </rect>
    </property>

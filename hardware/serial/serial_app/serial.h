@@ -1,4 +1,4 @@
-#ifndef SERIAL_H
+﻿#ifndef SERIAL_H
 #define SERIAL_H
 
 #include <QObject>
@@ -24,23 +24,27 @@ class CSerial : public QObject
     Q_OBJECT
 public:
     CSerial();
+    ~CSerial();
     void showWin();                     // 显示界面
     QList<QString> getPortsList();
     QList<qint32> getBaudRates();
     int open(const QString &name, const qint32 baud_rate, const qint32 data_bits, const qint32 parity, const qint32 stop_bits);
     int open(const SerialParam &param);
     int set( const qint32 baud_rate, const qint32 data_bits, const qint32 parity, const qint32 stop_bits);
-    void close();
-    qint64 serialSend(const QString &data, bool hex);
-    int serialRead(QString &data, bool hex);
-    int serialRead(QByteArray &bytes);
-private slots:
-    void serialReadyRead();private:
+    int get(QString& name, qint32& baud_rate, qint32& data_bits, qint32& parity, qint32& stop_bits);
 
-    QSerialPort m_serial;
+    void close();
+    qint64 send(const QString &data, bool hex);
+    int read(QString &data, bool hex);
+    int read(QByteArray &bytes);
+    bool isOpen();
+private slots:
+    void slotReadyRead();private:
+private:
+    QSerialPort m_handle;
     struct SerialParam m_param;
-    QByteArray m_recvBuffer;
-    QMutex m_recvBufMutex;
+    QByteArray m_rbuf;
+    QMutex m_rbufMutex;
 };
 /**
  * @brief The CSingleSerial class 单例

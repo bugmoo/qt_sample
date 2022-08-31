@@ -1,4 +1,4 @@
-#include "serial.h"
+﻿#include "serial.h"
 #include "serialwin.h"
 
 #include <QSerialPortInfo>              // 提供系统中存在的串口的信息
@@ -6,17 +6,24 @@
 
 CSerial::CSerial()
 {
-    m_recvBuffer.clear();
+    m_rbuf.clear();
+}
+
+CSerial::~CSerial()
+{
+    close();
 }
 /**
  * @brief serial::showWin
  */
 void CSerial::showWin()
 {
-    serialwin* serialWin;
-    serialWin = new serialwin(this);
-    serialWin->setModal(true);
-    serialWin->show();
+    CSerialWin* win;
+    win = new CSerialWin(this);
+    win->setModal(false);
+    win->setWindowTitle("serial");
+    win->setAttribute(Qt::WA_DeleteOnClose);
+    win->show();
 
 }
 /**
@@ -73,46 +80,45 @@ int CSerial::open(const QString &name, const qint32 baud_rate, const qint32 data
  */
 int CSerial::open(const SerialParam &param)
 {
-    if(m_serial.isOpen())
+    if(m_handle.isOpen())
     {
-        m_serial.close();
-        QObject::disconnect(&m_serial, 0, 0, 0);
+        close();
     }
     //连接信号和槽
-    QObject::connect(&m_serial, &QSerialPort::readyRead, this, &CSerial::serialReadyRead);
+    QObject::connect(&m_handle, &QSerialPort::readyRead, this, &CSerial::slotReadyRead);
     //设置串口名
-    m_serial.setPortName(param.name);
+    m_handle.setPortName(param.name);
     //设置波特率
-    m_serial.setBaudRate(param.baud_rate);
+    m_handle.setBaudRate(param.baud_rate);
     //设置数据位数
     switch(param.data_bits)
     {
-    case 0: m_serial.setDataBits(QSerialPort::Data5); break;
-    case 1: m_serial.setDataBits(QSerialPort::Data6); break;
-    case 2: m_serial.setDataBits(QSerialPort::Data7); break;
-    case 3: m_serial.setDataBits(QSerialPort::Data8); break;
+    case 0: m_handle.setDataBits(QSerialPort::Data5); break;
+    case 1: m_handle.setDataBits(QSerialPort::Data6); break;
+    case 2: m_handle.setDataBits(QSerialPort::Data7); break;
+    case 3: m_handle.setDataBits(QSerialPort::Data8); break;
     default: break;
     }
     //设置奇偶校验
     switch(param.parity)
     {
-    case 0: m_serial.setParity(QSerialPort::NoParity); break;
-    case 1: m_serial.setParity(QSerialPort::EvenParity); break;
-    case 2: m_serial.setParity(QSerialPort::OddParity); break;
+    case 0: m_handle.setParity(QSerialPort::NoParity); break;
+    case 1: m_handle.setParity(QSerialPort::EvenParity); break;
+    case 2: m_handle.setParity(QSerialPort::OddParity); break;
     default: break;
     }
     //设置停止位
     switch(param.stop_bits)
     {
-    case 0: m_serial.setStopBits(QSerialPort::OneStop); break;
-    case 1: m_serial.setStopBits(QSerialPort::OneAndHalfStop); break;
-    case 2: m_serial.setStopBits(QSerialPort::TwoStop); break;
+    case 0: m_handle.setStopBits(QSerialPort::OneStop); break;
+    case 1: m_handle.setStopBits(QSerialPort::OneAndHalfStop); break;
+    case 2: m_handle.setStopBits(QSerialPort::TwoStop); break;
     default: break;
     }
     //设置流控制
-    m_serial.setFlowControl(QSerialPort::NoFlowControl);
+    m_handle.setFlowControl(QSerialPort::NoFlowControl);
     //打开串口
-    if(!m_serial.open(QIODevice::ReadWrite))
+    if(!m_handle.open(QIODevice::ReadWrite))
     {
         return -1;
     }
@@ -136,7 +142,7 @@ int CSerial::open(const SerialParam &param)
  */
 int CSerial::set(const qint32 baud_rate, const qint32 data_bits, const qint32 parity, const qint32 stop_bits)
 {
-    if(!m_serial.isOpen())
+    if(!m_handle.isOpen())
     {
         return -1;
     }
@@ -146,22 +152,46 @@ int CSerial::set(const qint32 baud_rate, const qint32 data_bits, const qint32 pa
     return open(param);
 }
 /**
+ * @brief CSerial::get
+ * @param baud_rate
+ * @param data_bits
+ * @param parity
+ * @param stop_bits
+ * @return
+ * - -1 未连接
+ * - 0 正常
+ */
+int CSerial::get(QString& name, qint32 &baud_rate, qint32 &data_bits, qint32 &parity, qint32 &stop_bits)
+{
+    if(m_handle.isOpen()) {
+        name = m_param.name;
+        baud_rate = m_param.baud_rate;
+        data_bits = m_param.data_bits;
+        parity = m_param.parity;
+        stop_bits = m_param.stop_bits;
+        return 0;
+    } else {
+        return -1;
+    }
+}
+/**
  * @brief CSerial::close
  */
 void CSerial::close()
 {
     //关闭串口
-    m_serial.close();
+    m_handle.close();
+    QObject::disconnect(&m_handle, 0, 0, 0);
 }
 /**
  * @brief CSerial::serialReadyRead
  */
-void CSerial::serialReadyRead()
+void CSerial::slotReadyRead()
 {
-    QByteArray buffer = m_serial.readAll();
-    m_recvBufMutex.lock();
-    m_recvBuffer.append(buffer);
-    m_recvBufMutex.unlock();
+    QByteArray buffer = m_handle.readAll();
+    m_rbufMutex.lock();
+    m_rbuf.append(buffer);
+    m_rbufMutex.unlock();
 }
 
 
@@ -174,9 +204,9 @@ void CSerial::serialReadyRead()
  * @return 已发送字节数
  * - -1 发生错误
  */
-qint64 CSerial::serialSend(const QString &data, bool hex)
+qint64 CSerial::send(const QString &data, bool hex)
 {
-    if(!m_serial.isOpen())
+    if(!m_handle.isOpen())
     {
         return -1;
     }
@@ -192,7 +222,9 @@ qint64 CSerial::serialSend(const QString &data, bool hex)
         sendData = data.toUtf8();
     }
 
-    return m_serial.write(sendData);
+    qint64 written = m_handle.write(sendData);
+    m_handle.flush();
+    return written;
 }
 
 /**
@@ -203,9 +235,9 @@ qint64 CSerial::serialSend(const QString &data, bool hex)
  * - false ASCII形式
  * @return data的长度
  */
-int CSerial::serialRead(QString &data, bool hex)
+int CSerial::read(QString &data, bool hex)
 {
-    if(!m_serial.isOpen())
+    if(!m_handle.isOpen())
     {
         return -1;
     }
@@ -213,12 +245,12 @@ int CSerial::serialRead(QString &data, bool hex)
     int length = 0;
     data.clear();
 
-    if(m_recvBuffer.length())
+    if(m_rbuf.length())
     {
-        m_recvBufMutex.lock();
-        QByteArray buffer = m_recvBuffer;
-        m_recvBuffer.clear() ;
-        m_recvBufMutex.unlock();
+        m_rbufMutex.lock();
+        QByteArray buffer = m_rbuf;
+        m_rbuf.clear() ;
+        m_rbufMutex.unlock();
 
         if(true == hex)
         {
@@ -253,22 +285,27 @@ int CSerial::serialRead(QString &data, bool hex)
  * @param bytes
  * @return bytes 的长度
  */
-int CSerial::serialRead(QByteArray &bytes)
+int CSerial::read(QByteArray &bytes)
 {
-    if(!m_serial.isOpen())
+    if(!m_handle.isOpen())
     {
         return -1;
     }
 
     bytes.clear();
 
-    if(m_recvBuffer.length())
+    if(m_rbuf.length())
     {
-        m_recvBufMutex.lock();
-        QByteArray bytes = m_recvBuffer;
-        m_recvBuffer.clear() ;
-        m_recvBufMutex.unlock();
+        m_rbufMutex.lock();
+        QByteArray bytes = m_rbuf;
+        m_rbuf.clear() ;
+        m_rbufMutex.unlock();
     }
     return bytes.length();
+}
+
+bool CSerial::isOpen()
+{
+    return m_handle.isOpen();
 }
 

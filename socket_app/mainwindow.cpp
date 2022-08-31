@@ -13,8 +13,21 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_btnSerialWin_clicked()
+
+void MainWindow::on_btnTcpClientWin_clicked()
 {
-    m_serial.showWin();
+    m_tcpClient.showWin();
+}
+
+
+void MainWindow::on_btnTcpServerWin_clicked()
+{
+    m_tcpServer.showWin();
+}
+
+
+void MainWindow::on_btnUdpWin_clicked()
+{
+    m_udp.showWin();
 }
 

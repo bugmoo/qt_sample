@@ -1,21 +1,21 @@
-#ifndef SERIALWIN_H
+﻿#ifndef SERIALWIN_H
 #define SERIALWIN_H
 
 #include <QDialog>
 #include "serial.h"
 
-class serialwin : public QDialog
+class CSerialWin : public QDialog
 {
     Q_OBJECT
 private:
-    CSerial* m_serialClass;
+    CSerial* m_object;
     int m_timeID;
 
     void initUI();
     void deleteUI();
 public:
-    serialwin(CSerial* serial_class);
-    ~serialwin();
+    CSerialWin(CSerial* serial_class);
+    ~CSerialWin();
 
 private slots:
     void timerEvent(QTimerEvent *event);
